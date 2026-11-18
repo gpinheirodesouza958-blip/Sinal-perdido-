@@ -1,0 +1,28 @@
+
+{
+  "id": "/Sinal-perdido-/",
+  "name": "SINAL PERDIDO - Edição NightExtreme",
+  "short_name": "Sinal Perdido",
+  "description": "Uma aventura misteriosa com 100 missões, 10 capítulos, criaturas e segredos escondidos.",
+  "lang": "pt-BR",
+  "start_url": "/Sinal-perdido-/",
+  "scope": "/Sinal-perdido-/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#080d18",
+  "theme_color": "#13243b",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
