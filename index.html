@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#13243b">
+<title>SINAL PERDIDO - Edição NightExtreme</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#080d18;color:#edf5ff;font-family:Arial}
+header{text-align:center;background:#13243b;padding:20px}
+h1{color:#62caff;margin:5px}
+main{max-width:650px;margin:auto;padding:14px}
+.panel{background:#142238;border:1px solid #34506c;border-radius:13px;padding:16px;margin:12px 0}
+.stats{display:flex;justify-content:space-between;gap:5px}
+.stat{background:#263c55;padding:10px;border-radius:8px;font-size:13px}
+.scene{background:linear-gradient(140deg,#19415e,#080e19);padding:22px;border-radius:12px;text-align:center;min-height:180px}
+#picture{font-size:60px}
+button{width:100%;padding:14px;margin:6px 0;border:0;border-radius:9px;background:#147bb2;color:white;font-size:15px;font-weight:bold}
+.secondary{background:#43546b}
+#bar{height:9px;background:#263c55;border-radius:9px;overflow:hidden}
+#fill{height:100%;background:#57c9ff;width:0}
+#dialogue{background:#080f1b;border-left:4px solid #58c9ff;padding:13px;border-radius:7px;margin-top:12px;min-height:85px}
+#speaker{color:#60caff;font-weight:bold}
+small{color:#a2bad3}
+</style>
+</head>
+<body>
+<header>
+<small>JOGO DE AVENTURA</small>
+<h1>📡 SINAL PERDIDO</h1>
+<b>EDIÇÃO ESPECIAL NIGHTEXTREME — 100 MISSÕES</b>
+</header>
+<main>
+<div class="panel stats">
+<div class="stat">❤️ <b id="hp">100</b></div>
+<div class="stat">🔎 <b id="clues">0</b></div>
+<div class="stat">🎒 <b id="items">0</b></div>
+</div>
+
+<div class="panel">
+<small id="chapter">CAPÍTULO 1</small>
+<h2 id="title">A Instalação Perdida</h2>
+<div id="bar"><div id="fill"></div></div>
+<p id="number">MISSÃO 01/100</p>
+
+<div class="scene">
+<div id="picture">📡</div>
+<h3 id="scene">Sinal recebido...</h3>
+<p id="desc">Sua missão começa agora.</p>
+</div>
+
+<div id="dialogue">
+<div id="speaker">📡 SISTEMA</div>
+<p id="speech">Bem-vindo, agente. Estamos aguardando suas instruções.</p>
+</div>
+
+<div id="choices"></div>
+<button id="next" class="secondary" hidden onclick="next()">PRÓXIMA MISSÃO ➜</button>
+</div>
+
+<div class="panel">
+<b>🔊 CONFIGURAÇÕES DE ÁUDIO</b>
+<button class="secondary" onclick="toggleSound()">🔊 Som: <span id="soundStatus">Ligado</span></button>
+<button class="secondary" onclick="toggleVoice()">🗣️ Vozes: <span id="voiceStatus">Ligadas</span></button>
+<button class="secondary" onclick="music()">🎵 Música: <span id="musicStatus">Desligada</span></button>
+</div>
+
+<div class="panel">
+<b>🎒 INVENTÁRIO</b>
+<p id="inventory">Vazio</p>
+</div>
+
+<button id="start" onclick="start()">▶ INICIAR CAMPANHA</button>
+<button class="secondary" onclick="location.reload()">↻ REINICIAR JOGO</button>
+</main>
+
+<script>
+const titles=`
+O Abandono|O Remédio|A Criatura|O Sistema|Operação Zero|O Trem Fantasma|Área Inundada|O Cientista|O Setor Infantil|Apagão|
+A Nova Transmissão|O Elevador|A Sala Vazia|O Gato Retorna|Os Funcionários|O Documento 002|A Observação|Memórias Apagadas|Alerta Vermelho|O Experimento 002|
+A Porta Selada|O Laboratório Oculto|Os Arquivos Perdidos|A Voz no Rádio|A Sala dos Espelhos|O Corredor Infinito|A Chave Dourada|O Andar Desconhecido|A Câmara Secreta|O Primeiro Segredo|
+A Estação Abandonada|A Praça Vazia|O Hospital|O Shopping|A Torre de Comunicação|Os Sobreviventes|O Mercado|A Escola|O Abrigo|A Cidade Esquecida|
+O Primeiro Cientista|O Projeto Original|A Experiência Perdida|O Nascimento da Entidade|O Diário Secreto|A Primeira Fuga|O Arquivo 001|A Verdadeira História|O Laboratório Inicial|A Origem Revelada|
+As Celas Abertas|O Ataque ao Sistema|O Setor Vermelho|A Criatura Azul|O Desaparecimento|A Sala de Controle|O Plano de Fuga|A Grande Confusão|O Último Refúgio|A Revolta|
+A Saída|A Floresta|A Estrada Bloqueada|A Cidade em Alerta|O Posto Militar|A Transmissão Mundial|O Aeroporto|O Trem da Superfície|A Base Externa|O Mundo em Perigo|
+O Sinal Distante|A Base Polar|O Laboratório Congelado|A Câmara de Gelo|O Experimento 003|O Cientista Desaparecido|O Código Polar|O Núcleo Congelado|A Última Porta|A Instalação Final|
+O Protocolo|A Contagem Regressiva|A Sala de Energia|O Gato Desaparecido|A Mensagem Secreta|O Retorno da Entidade|A Última Pesquisa|A Escolha Impossível|O Sacrifício do Sistema|O Último Protocolo|
+O Arquivo 100|A Revelação|O Criador dos Criadores|O Mundo Artificial|A Verdade do Gato|O Experimento Final|A Última Criatura|O Fim da Instalação|A Última Transmissão|O Verdadeiro Experimento
+`.trim().split("|").map(x=>x.trim());
+
+const chapters=[
+"A Instalação Perdida","Experimento 002","O Setor Proibido",
+"A Cidade Subterrânea","A Origem","A Revolta das Criaturas",
+"O Mundo Exterior","A Última Instalação","Protocolo Final",
+"O Verdadeiro Experimento"
+];
+
+const emojis=["🏢","🧪","🚪","🏙️","🔬","👁️","🌎","❄️","🚨","📡"];
+
+let n=0,hp=100,clues=0,items=[];
+let finished=false,locked=false;
+let soundOn=true,voiceOn=true,musicOn=false;
+let audio=null,ambience=null,ambienceGain=null;
+
+function $(id){return document.getElementById(id)}
+
+function audioStart(){
+if(!audio){
+audio=new (window.AudioContext||window.webkitAudioContext)();
+}
+if(audio.state==="suspended")audio.resume();
+}
+
+function tone(freq,duration,type="sine",volume=.08){
+if(!soundOn)return;
+audioStart();
+let osc=audio.createOscillator();
+let gain=audio.createGain();
+osc.type=type;
+osc.frequency.value=freq;
+gain.gain.setValueAtTime(volume,audio.currentTime);
+gain.gain.exponentialRampToValueAtTime(.001,audio.currentTime+duration);
+osc.connect(gain);
+gain.connect(audio.destination);
+osc.start();
+osc.stop(audio.currentTime+duration);
+}
+
+function effect(name){
+if(!soundOn)return;
+if(name==="click"){
+tone(550,.09,"sine");
+}else if(name==="door"){
+tone(90,.5,"sawtooth",.1);
+setTimeout(()=>tone(65,.4,"sawtooth"),150);
+}else if(name==="alarm"){
+[700,900,700,900].forEach((f,i)=>setTimeout(()=>tone(f,.25,"square",.045),i*280));
+}else if(name==="computer"){
+tone(850,.08);
+setTimeout(()=>tone(1200,.15),100);
+}else if(name==="success"){
+tone(500,.15);
+setTimeout(()=>tone(750,.25),150);
+}else if(name==="danger"){
+tone(130,.6,"sawtooth",.12);
+}else if(name==="secret"){
+tone(400,.4);
+setTimeout(()=>tone(650,.5),250);
+}
+}
+
+function speak(text,who="SISTEMA"){
+if(!voiceOn||!("speechSynthesis" in window))return;
+speechSynthesis.cancel();
+let msg=new SpeechSynthesisUtterance(text);
+msg.lang="pt-BR";
+msg.rate=who==="GATO"?.92:1;
+msg.pitch=who==="GATO"?.78:who==="CRIATURA"?.55:1;
+msg.volume=.9;
+let voices=speechSynthesis.getVoices();
+let voice=voices.find(v=>v.lang.toLowerCase().startsWith("pt-br"));
+if(voice)msg.voice=voice;
+speechSynthesis.speak(msg);
+}
+
+function say(who,text){
+$("speaker").textContent=who;
+$("speech").textContent=text;
+speak(text,who.includes("GATO")?"GATO":who.includes("CRIATURA")?"CRIATURA":"SISTEMA");
+}
+
+function toggleSound(){
+soundOn=!soundOn;
+$("soundStatus").textContent=soundOn?"Ligado":"Desligado";
+if(soundOn)effect("success");
+}
+
+function toggleVoice(){
+voiceOn=!voiceOn;
+$("voiceStatus").textContent=voiceOn?"Ligadas":"Desligadas";
+if(!voiceOn&&"speechSynthesis" in window)speechSynthesis.cancel();
+}
+
+function music(){
+audioStart();
+musicOn=!musicOn;
+$("musicStatus").textContent=musicOn?"Ligada":"Desligada";
+if(musicOn){
+ambience=audio.createOscillator();
+ambienceGain=audio.createGain();
+ambience.type="sine";
+ambience.frequency.value=55;
+ambienceGain.gain.value=.018;
+ambience.connect(ambienceGain);
+ambienceGain.connect(audio.destination);
+ambience.start();
+}else if(ambience){
+ambience.stop();
+ambience=null;
+}
+}
+
+function update(){
+$("hp").textContent=hp;
+$("clues").textContent=clues;
+$("items").textContent=items.length;
+$("inventory").textContent=items.join(", ")||"Vazio";
+$("fill").style.width=(n+1)+"%";
+$("number").textContent="MISSÃO "+String(n+1).padStart(2,"0")+"/100";
+$("chapter").textContent="CAPÍTULO "+(Math.floor(n/10)+1)+" — "+chapters[Math.floor(n/10)];
+}
+
+function dialogueForMission(){
+if(n===13)return ["🐈‍⬛ GATO PRETO","Finalmente você chegou... Eu estava esperando por você. O Experimento 002 está acordando."];
+if(n===2||n===10||n===19||n===53||n===85||n===96)return ["👁️ CRIATURA","Você não deveria estar aqui..."];
+if(n===99)return ["📡 SISTEMA","ALERTA. EXPERIMENTO 004 INICIADO. FIM DA TRANSMISSÃO."];
+if(n===0)return ["📡 SISTEMA","Agente, estamos recebendo um sinal da instalação. Entre e investigue."];
+if(n===14)return ["🗣️ FUNCIONÁRIO","Por favor! Você precisa nos ajudar!"];
+if(n===49)return ["🧑‍🔬 CIENTISTA","Eu tentei impedir o experimento... mas já era tarde."];
+if(n===89)return ["🐈‍⬛ GATO PRETO","Você precisa escolher. Não existe uma terceira saída."];
+return ["📡 SISTEMA","Missão "+(n+1)+". "+titles[n]+". Aguarde as instruções."];
+}
+
+function story(i){
+const s=[
+"Você chegou a uma nova área. Algo parece errado.",
+"Uma gravação revela que os funcionários escondiam informações.",
+"Um sistema automático detectou sua presença.",
+"Você encontra sinais de um experimento encerrado.",
+"Uma porta se abre e revela um novo setor.",
+"Uma mensagem desconhecida tenta entrar em contato.",
+"Você precisa encontrar uma maneira de continuar.",
+"Um documento antigo revela parte da verdade.",
+"Uma presença desconhecida foi detectada.",
+"Você está perto da origem do mistério."
+];
+return s[Math.floor(i/10)]+" Objetivo: "+titles[i]+".";
+}
+
+const actions=[
+["🔍 Investigar ambiente","Você encontrou uma pista importante!","pista","computer"],
+["🚪 Examinar objetos","Você encontrou um objeto para o inventário!","item","door"],
+["💻 Consultar sistema","O computador revelou uma informação secreta!","secret","computer"]
+];
+
+function start(){
+audioStart();
+n=0;hp=100;clues=0;items=[];
+finished=false;locked=false;
+$("start").hidden=true;
+effect("success");
+show();
+}
+
+function show(){
+locked=false;
+$("next").hidden=true;
+$("choices").innerHTML="";
+$("title").textContent=titles[n];
+$("picture").textContent=emojis[Math.floor(n/10)];
+$("scene").textContent="Novo objetivo";
+$("desc").textContent=story(n);
+let d=dialogueForMission();
+say(d[0],d[1]);
+actions.forEach((a,i)=>{
+let b=document.createElement("button");
+b.textContent=a[0];
+b.onclick=()=>choose(i);
+$("choices").appendChild(b);
+});
+update();
+}
+
+function choose(i){
+if(locked||finished)return;
+locked=true;
+let a=actions[i];
+effect(a[3]);
+if(i===0)clues++;
+if(i===1)items.push("Objeto "+(n+1));
+if(i===2){
+clues++;
+if(n%7===0)hp=Math.max(0,hp-5);
+}
+$("choices").innerHTML="";
+$("scene").textContent="Ação realizada";
+$("desc").textContent=a[1];
+say("📡 SISTEMA",a[1]);
+
+if(hp<=0){
+end("FIM DE JOGO","Sua energia acabou.");
+return;
+}
+
+let b=document.createElement("button");
+b.textContent="CONCLUIR MISSÃO";
+b.onclick=()=>{
+effect("success");
+$("choices").innerHTML="";
+$("scene").textContent="MISSÃO CONCLUÍDA";
+$("desc").textContent="Você terminou "+titles[n]+". Prepare-se para continuar.";
+say("📡 SISTEMA","Missão concluída. Próxima etapa autorizada.");
+$("next").hidden=false;
+};
+$("choices").appendChild(b);
+update();
+}
+
+function next(){
+if(n<99){
+n++;
+effect("click");
+show();
+}else{
+let result=clues>=50?
+"Você descobriu a origem dos experimentos e revelou a verdade ao mundo.":
+"Você sobreviveu às 100 missões. Mas uma transmissão misteriosa continua.";
+end("🏆 CAMPANHA COMPLETA",result+" Experimento 004 iniciado.");
+}
+}
+
+function end(t,d){
+finished=true;
+effect("secret");
+$("title").textContent=t;
+$("scene").textContent="FIM DA CAMPANHA";
+$("picture").textContent="🏆";
+$("desc").textContent=d;
+$("choices").innerHTML="";
+$("next").hidden=true;
+say("📡 SISTEMA",d);
+$("fill").style.width="100%";
+}
+</script>
+</body>
+  </html>
+  
